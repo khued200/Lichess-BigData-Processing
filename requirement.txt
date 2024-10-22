@@ -1,0 +1,3 @@
+chess
+pandas
+kafka-python

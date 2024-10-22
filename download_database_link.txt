@@ -1,0 +1,10 @@
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-09.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-08.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-07.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-06.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-05.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-04.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-03.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-02.pgn.zst
+https://database.lichess.org/chess960/lichess_db_chess960_rated_2024-01.pgn.zst
+
