@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode, split, from_json, col
 from pyspark.sql.types import StructType, StructField, StringType
 
+
 scala_version = '2.12'
 spark_version = '3.5.3'
 
@@ -61,6 +62,16 @@ query = chess_df.writeStream \
     .outputMode("append") \
     .format("console") \
     .start()
+
+# # Ghi DataFrame vào Cassandra
+# query = chess_df.writeStream \
+#     .outputMode("append") \
+#     .format("org.apache.spark.sql.cassandra") \
+#     .option("keyspace", "lichess") \
+#     .option("table", "game") \
+#     .start()
+
+print("Da luu xong du lieu")
 
 # Await termination of the query
 query.awaitTermination()
