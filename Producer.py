@@ -34,7 +34,9 @@ def parse_partial_pgn_to_dataframe(pgn_file, num_games=10):
             games_data.append({
                 # 'Event': game_info.get("Event", ""),
                 # 'Site': game_info.get("Site", ""),
+                'GameID': game_count+1,
                 'Date': game_info.get("Date", ""),
+                'Time': game_info.get("UTCTime", ""),
                 'Round': game_info.get("Round", ""),
                 'White': game_info.get("White", ""),
                 'Black': game_info.get("Black", ""),
@@ -58,10 +60,9 @@ df = parse_partial_pgn_to_dataframe(pgn_file, num_games=1000)
 
 # Hiển thị DataFrame chứa thông tin về các ván cờ đầu tiên
 # display(df)
-
 # Tạo Kafka Producer
 producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',  # Địa chỉ của Kafka broker
+    bootstrap_servers='localhost:29092',  # Địa chỉ của Kafka broker
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
     linger_ms=100000*10000, batch_size=16384*100  # Chuyển đổi dữ liệu thành chuỗi JSON
 )
@@ -81,14 +82,14 @@ producer = KafkaProducer(
 def send_data_in_batches():
     for i in range (min(10000, len(df))):
         message = df.iloc[i].to_dict() # Chuyển từng hàng của DataFrame thành dict
-        producer.send('chess_games', value=message)  # Gửi đến topic 'chess_games'
+        producer.send('chess-games', value=message)  # Gửi đến topic 'chess_games'
         # if ((i + 1) % 100 == 0) or (i == min(10000, len(df))):  
         #     print(f"Sent {i+1} messages, waiting for 10 seconds...")
         #     time.sleep(10)
         #     producer.flush()
 
         print(f"Sent {i+1} messages, waiting for 10 seconds...")
-        time.sleep(1)
+        time.sleep(3)
         producer.flush()
         
     # Đảm bảo dữ liệu đã được gửi

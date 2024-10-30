@@ -1,0 +1,2 @@
+## Command to use send data from Spark to Cassandra
+spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,com.datastax.spark:spark-cassandra-connector_2.12:3.4.0 --conf "spark.driver.host=localhost" --conf "spark.driver.bindAddress=127.0.0.1" Spark_to_Cassandra.py
