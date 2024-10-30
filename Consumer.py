@@ -4,7 +4,7 @@ import json
 # Tạo Kafka Consumer
 consumer = KafkaConsumer(
     'chess_games',  # Tên topic
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers='localhost:29092',
     auto_offset_reset='earliest',  # Đọc từ đầu nếu không có offset
     enable_auto_commit=True,      # Tự động lưu offset
     group_id='my-group',          # Nhóm tiêu thụ
@@ -17,7 +17,7 @@ count = 0
 try:
     for message in consumer:
         count += 1
-        print(f"Received message {count}: {message.value}")
+        print(f"Received message {count}...")
 
 except KeyboardInterrupt:
     print("Stopping consumer...")
