@@ -4,7 +4,7 @@ import json
 # Tạo Kafka Consumer
 consumer = KafkaConsumer(
     "chess",  # Tên topic
-    bootstrap_servers= "localhost:9092",
+    bootstrap_servers= "localhost:29092",
     auto_offset_reset='earliest', # Đọc từ đầu nếu không có offset
     enable_auto_commit=True,      # Tự động lưu offset
     group_id="my_group",          # Nhóm tiêu thụ

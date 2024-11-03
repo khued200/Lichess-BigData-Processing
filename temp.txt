@@ -1,6 +1,7 @@
 spark = SparkSession.builder \
     .master('local[*]') \
     .appName("KafkaSparkStreaming") \
+.config("spark.cassandra.connection.host","cassandra-lichess:9042")\
     .config("spark.jars.packages", "org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.3,\
             org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,\
             com.datastax.spark:spark-cassandra-connector_2.12:3.5.3") \

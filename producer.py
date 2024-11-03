@@ -6,7 +6,7 @@ import os
 
 # Khởi tạo Kafka producer
 producer = KafkaProducer(
-    bootstrap_servers=['localhost:9092'],                           # Địa chỉ Kafka broker
+    bootstrap_servers=['localhost:29092'],                          # Địa chỉ Kafka broker
     value_serializer=lambda v : json.dumps(v).encode('utf-8'),      # Chuyển dữ liệu thành dạng JSON
     api_version=(3, 8, 0)                                           # Phiên bản Kafka
 )

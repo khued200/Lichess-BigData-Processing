@@ -1,22 +1,32 @@
+from bcrypt import kdf
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import explode, split, from_json, col
+from pyspark.sql.functions import  from_json, col, udf
 from pyspark.sql.types import StructType, StructField, StringType
-
+import uuid
 
 scala_version = '2.12'
 spark_version = '3.5.3'
 
-package = (
-    f'org.apache.spark:spark-streaming-kafka-0-10_{scala_version}:{spark_version}',
-    f'org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}'
-)
+# package = (
+#     f'org.apache.spark:spark-streaming-kafka-0-10_{scala_version}:{spark_version}',
+#     f'org.apache.spark:spark-sql-kafka-0-10_{scala_version}:{spark_version}'
+# )
 
 # Initialize Spark Session with the necessary packages
 spark = SparkSession.builder \
-    .master('local[*]') \
     .appName("KafkaSparkStreaming") \
-    .config("spark.jars.packages", "org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.3,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3") \
+    .master('local[*]') \
+    .config("spark.cassandra.connection.host","localhost") \
+    .config("spark.cassandra.connection.port", "9042") \
+    .config("spark.jars.packages", "org.apache.spark:spark-streaming-kafka-0-10_2.12:3.5.3," \
+                                    "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3," \
+                                    "com.datastax.spark:spark-cassandra-connector_2.12:3.5.1") \
     .getOrCreate()
+
+
+# Thiết lập checkpoint directory
+checkpoint_dir = "data/spark-master/checkpoint"  # Hoặc một đường dẫn cục bộ
+spark.sparkContext.setCheckpointDir(checkpoint_dir)
 
 # Set the log level to avoid excessive log output
 spark.sparkContext.setLogLevel("WARN")
@@ -24,8 +34,9 @@ spark.sparkContext.setLogLevel("WARN")
 # Read from Kafka
 kafka_stream = spark.readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", "localhost:9092") \
+    .option("kafka.bootstrap.servers", "localhost:29092") \
     .option("subscribe", "chess") \
+    .option("startingOffsets", "earliest") \
     .load()
 
 chess_schema = StructType([
@@ -57,19 +68,35 @@ chess_stream = kafka_values.select(from_json(col("value"), chess_schema).alias("
 # Select the fields from the parsed DataFrame
 chess_df = chess_stream.select("data.*")
 
-# Start the query to write to the console
-query = chess_df.writeStream \
-    .outputMode("append") \
-    .format("console") \
-    .start()
+# Đổi tên các cột thành chữ thường
+for column in chess_df.columns:
+    chess_df = chess_df.withColumnRenamed(column, column.lower())
 
-# # Ghi DataFrame vào Cassandra
+# Tạo UDF để sinh UUID dưới dạng chuỗi
+uuid_udf = udf(lambda: str(uuid.uuid4()), StringType())
+
+# Thêm cột GameID vào DataFrame
+chess_df = chess_df.withColumn("gameid", uuid_udf())
+
+# Preview schema or data
+chess_df.printSchema()
+
+print("Chuan bi gui du lieu.....................")
+
+# Start the query to write to the console
 # query = chess_df.writeStream \
 #     .outputMode("append") \
-#     .format("org.apache.spark.sql.cassandra") \
-#     .option("keyspace", "lichess") \
-#     .option("table", "game") \
+#     .format("console") \
 #     .start()
+
+# Ghi DataFrame vào Cassandra
+query = chess_df.writeStream \
+    .outputMode("append") \
+    .format("org.apache.spark.sql.cassandra") \
+    .option("keyspace", "lichess") \
+    .option("table", "games") \
+    .option("checkpointLocation", "/tmp/kafka-checkpoint") \
+    .start()
 
 print("Da luu xong du lieu")
 
