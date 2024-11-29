@@ -9,7 +9,7 @@ networks:
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.7.1
     hostname: zookeeper
     container_name: zookeeper-lichess
     ports:
@@ -20,13 +20,14 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
 
   kafka:
-    image: confluentinc/cp-kafka:latest
+    image: confluentinc/cp-kafka:7.7.1
     ports:
       - 9092:9092
       - 29092:29092
     depends_on:
       - zookeeper
     environment:
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
@@ -40,17 +41,20 @@ services:
     container_name: kafka-lichess
     networks:
       - net
-    restart: always
 
   cassandra:
-    image: cassandra:latest
+    image: cassandra:4.1.7
     container_name: cassandra-lichess
     hostname: cassandra
     networks:
       net:
         ipv4_address: 172.22.0.6
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
     ports:
-      - "9042:9042"
+      - 9042:9042
     environment:
       CASSANDRA_CLUSTER_NAME: "lichess-cluster"
       CASSANDRA_DC: "datacenter1"
@@ -63,15 +67,14 @@ services:
   spark-master:
     image: bde2020/spark-master:3.0.0-hadoop3.2-java11
     container_name: spark-master
+    # command: bin/spark-class org.apache.spark.deploy.master.Master
     hostname: spark-master
     healthcheck:
       interval: 5s
       retries: 100
     ports:
-      - "8080:8080"
+      - "9090:8080"
       - "7077:7077"
-      - "4040:4040"
-      - "4041:4041"
     environment:
       - INIT_DAEMON_STEP=false
       - SPARK_DRIVER_HOST=192.168.1.5
@@ -84,6 +87,7 @@ services:
     image: bde2020/spark-worker:3.0.0-hadoop3.2-java11
     container_name: spark-worker-1
     hostname: spark-worker-1
+    # command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
     ports:
@@ -95,39 +99,93 @@ services:
     networks:
       - net
 
-  namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8
-    container_name: namenode
-    hostname: namenode
-    volumes:
-      - ./data/namenode:/hadoop/dfs/name
-    environment:
-      - CLUSTER_NAME=test
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-    healthcheck:
-      interval: 5s
-      retries: 100
-    networks:
-      - net
-    ports:
-      - 9870:9870
-      - 8020:8020
+  # namenode:
+  #   image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8
+  #   container_name: namenode
+  #   hostname: namenode
+  #   volumes:
+  #     - ./data/namenode:/hadoop/dfs/name
+  #   environment:
+  #     - CLUSTER_NAME=test
+  #     - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  #   healthcheck:
+  #     interval: 5s
+  #     retries: 100
+  #   networks:
+  #     - net
+  #   ports:
+  #     - 9870:9870
+  #     - 8020:8020
 
-  datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.3-java8
-    container_name: datanode
-    hostname: datanode
-    volumes:
-      - ./data/datanode:/hadoop/dfs/data
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  # datanode:
+  #   image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.3-java8
+  #   container_name: datanode
+  #   hostname: datanode
+  #   volumes:
+  #     - ./data/datanode:/hadoop/dfs/data
+  #   environment:
+  #     - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  #   depends_on:
+  #     - namenode
+  #   healthcheck:
+  #     interval: 5s
+  #     retries: 100
+  #   networks:
+  #     - net
+  #   ports:
+  #     - 50075:50075
+  #     - 50010:50010
+
+  webserver:
+    image: apache/airflow:2.10.3-python3.11
+    command: webserver
+    entrypoint: ['/opt/airflow/script/entrypoint.sh']
     depends_on:
-      - namenode
+      - postgres
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+    ports:
+      - "8080:8080"
     healthcheck:
-      interval: 5s
-      retries: 100
+      test: ['CMD-SHELL', "[ -f /opt/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    container_name: webserver
     networks:
       - net
-    ports:
-      - 50075:50075
-      - 50010:50010
+
+  scheduler:
+    image: apache/airflow:2.10.3-python3.11
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
+    container_name: scheduler
+    networks:
+      - net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    container_name: postgres
+    networks:
+      - net

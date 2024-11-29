@@ -13,11 +13,11 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # Kafka parameters
-kafka_bootstrap_servers = 'localhost:9092'
+kafka_bootstrap_servers = 'localhost:29092'
 kafka_topic = 'chess_games'
 
 kafka_input_config= {
-    "kafka.bootstrap.servers":'localhost:9092',
+    "kafka.bootstrap.servers":'localhost:29092',
     "subscribe":kafka_topic,
     
 }
