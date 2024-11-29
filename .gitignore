@@ -1,6 +1,5 @@
 *.pgn
 *.zst
-data/*
 data/cassandra/*
 data/datanode/*
 data/kafka/*
