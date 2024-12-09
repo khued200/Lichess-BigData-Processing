@@ -59,20 +59,16 @@ chess_schema = StructType([
         StructField("Moves", StringType(), True)
     ])
 
-# Select the value field (assuming messages are in bytes)
+
 kafka_values = kafka_stream.selectExpr("CAST(value AS STRING)")
 
-# Parse the JSON string into a DataFrame using the defined schema
 chess_stream = kafka_values.select(from_json(col("value"), chess_schema).alias("data"))
 
-# Select the fields from the parsed DataFrame
 chess_df = chess_stream.select("data.*")
 
-# Đổi tên các cột thành chữ thường
 for column in chess_df.columns:
     chess_df = chess_df.withColumnRenamed(column, column.lower())
 
-# Tạo UDF để sinh UUID dưới dạng chuỗi
 uuid_udf = udf(lambda: str(uuid.uuid4()), StringType())
 
 # Thêm cột GameID vào DataFrame
@@ -100,5 +96,4 @@ query = chess_df.writeStream \
 
 print("Da luu xong du lieu")
 
-# Await termination of the query
 query.awaitTermination()
