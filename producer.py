@@ -1,29 +1,23 @@
 import chess.pgn
 import pandas as pd
-from kafka import KafkaProducer, KafkaAdminClient
-from kafka.admin import NewTopic
+from kafka import KafkaProducer
 import json
 import time
 
 
-# Hàm để đọc một số lượng ván cờ từ file PGN
 def parse_partial_pgn_to_dataframe(pgn_file, num_games=10):
     games_data = []
     
-    # Mở file PGN
     with open(pgn_file, 'r') as pgn:
-        # Đếm số lượng ván cờ đã đọc
         game_count = 0
         
-        # Đọc từng game
         while game_count < num_games:
             game = chess.pgn.read_game(pgn)
             if game is None:
-                break  # Kết thúc tệp nếu không còn ván cờ nào
+                break 
             
             # display(game.headers)
             
-            # Lấy thông tin chung về trận đấu
             game_info = game.headers
             
             # Lấy toàn bộ nước đi của trận đấu
@@ -46,7 +40,6 @@ def parse_partial_pgn_to_dataframe(pgn_file, num_games=10):
                 'Variant': game_info.get("Variant", "")
             })
             
-            # Tăng biến đếm số lượng ván cờ
             game_count += 1
     
     # Chuyển sang pandas DataFrame
@@ -55,9 +48,6 @@ def parse_partial_pgn_to_dataframe(pgn_file, num_games=10):
 # Đọc một phần của file PGN (chỉ đọc 5 ván cờ đầu tiên)
 pgn_file = 'D:\\lichess_db_antichess_rated_2024-09.pgn'
 df = parse_partial_pgn_to_dataframe(pgn_file, num_games=1000)
-
-# Hiển thị DataFrame chứa thông tin về các ván cờ đầu tiên
-# display(df)
 
 # Tạo Kafka Producer
 producer = KafkaProducer(
