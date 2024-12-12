@@ -90,8 +90,6 @@ services:
     environment:
       SPARK_MODE: worker
       SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: 1G
-      SPARK_WORKER_CORES: 2
       SPARK_RPC_AUTHENTICATION_ENABLED: no
       SPARK_RPC_ENCRYPTION_ENABLED: no
       SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED: no
@@ -142,3 +140,57 @@ services:
     ports:
       - 50075:50075
       - 50010:50010
+
+  webserver:
+    image: apache/airflow:2.10.3-python3.11
+    command: webserver
+    entrypoint: ["/opt/airflow/script/entrypoint.sh"]
+    depends_on:
+      - postgres
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /opt/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    container_name: webserver
+    networks:
+      - net
+
+  scheduler:
+    image: apache/airflow:2.10.3-python3.11
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
+    container_name: scheduler
+    networks:
+      - net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    container_name: postgres
+    networks:
+      - net
