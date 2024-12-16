@@ -1,0 +1,11 @@
+chess==1.11.1
+pandas==2.2.1
+kafka-python==2.0.2
+cassandra-driver==3.29.2
+pyspark==3.4.3
+apache-airflow
+apache-airflow-providers-common-sql
+apache-airflow-providers-ftp
+apache-airflow-providers-http
+apache-airflow-providers-imap
+apache-airflow-providers-sqlite
