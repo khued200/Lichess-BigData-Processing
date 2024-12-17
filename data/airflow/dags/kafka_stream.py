@@ -100,4 +100,3 @@ with DAG(
         task_id='process_and_send_data',
         python_callable=process_and_send_data
     )
-

@@ -95,7 +95,7 @@ def connect_to_kafka(spark_conn):
     try:
         spark_df = spark_conn.readStream \
             .format('kafka') \
-            .option('kafka.bootstrap.servers', 'localhost:29092') \
+            .option('kafka.bootstrap.servers', 'localhost:29093,localhost:29094,localhost:29095') \
             .option('subscribe', 'chess-games') \
             .option('startingOffsets', 'earliest') \
             .load()
@@ -174,7 +174,7 @@ if __name__ == "__main__":
             print("Streaming is being started...")
             streaming_query = (selection_df.writeStream.format("org.apache.spark.sql.cassandra")
                                .outputMode("append") 
-                               .option('checkpointLocation', '/tmp/checkpoint')
+                               .option('checkpointLocation', 'data/spark-master/tmp/checkpoint')
                                .option('keyspace', 'chess_keyspace')
                                .option('table', 'chess_game')
                                .start())
