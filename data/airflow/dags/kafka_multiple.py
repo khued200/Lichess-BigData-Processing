@@ -13,6 +13,10 @@ from airflow.utils.trigger_rule import TriggerRule
 from kafka.errors import KafkaError
 from kafka.admin import KafkaAdminClient
 
+
+num_games = 3000
+num_parallel_task = 4
+
 # Function to read a specific range of games from the PGN file
 def process_date_pgn(pgn_file, start_game, end_game, output_file):
     games_data = []
@@ -132,15 +136,11 @@ def create_game_ranges(num_games, num_parallel_task):
     return game_ranges
 
 # Example usage:
-num_games = 3000
-num_parallel_task = 4
 
 game_ranges = create_game_ranges(num_games, num_parallel_task) # Add more ranges as needed
 
 # Define Kafka brokers for each task
-brokers = ['kafka-1:9093', 'kafka-2:9094','kafka-3:9095']  # Example brokers for each task
-
-
+brokers = ['kafka1:9093', 'kafka2:9094','kafka3:9095']  # Example brokers for each task
 
 def is_broker_alive_admin(broker):
     try:
@@ -182,8 +182,9 @@ def retry_failed_batches(failed_dir, brokers):
                 batch = json.load(f)
                 for record in batch:
                     producer.send('chess-games', value=record)
-            os.remove(file_path)  # Xóa file sau khi gửi thành công
+            
             logging.info(f"Retried and sent data from {file_path}")
+            os.remove(file_path)  # Xóa file sau khi gửi thành công
 
 
 with DAG(

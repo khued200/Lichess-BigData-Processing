@@ -2,7 +2,9 @@
 *.zst
 data/cassandra/*
 data/datanode/*
-data/kafka/*
+data/kafka-1/*
+data/kafka-3/*
+data/kafka-2/*
 data/namenode/*
 data/spark-master/*
 data/spark-worker/*

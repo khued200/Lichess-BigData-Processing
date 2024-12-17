@@ -204,7 +204,7 @@ services:
       - ./data/airflow/dags:/opt/airflow/dags
       - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
       - ./requirements.txt:/opt/airflow/requirements.txt
-      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+      - ./lichess-database/lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
       - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
     ports:
       - "8080:8080"
@@ -224,7 +224,7 @@ services:
       - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
       - ./requirements.txt:/opt/airflow/requirements.txt
       - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
-      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+      - ./lichess-database/lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
     command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
     container_name: scheduler
     networks:
