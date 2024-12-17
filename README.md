@@ -16,7 +16,8 @@ Dự án này xây dựng một pipeline dữ liệu xử lý dữ liệu đầu
 - Spark sẽ tiếp nhận data từ kafka và lưu vào casandra
 
 ## **Hướng dẫn cài đặt**
-### **1. Thực hiện clone repository **
+### **1. Thực hiện clone repository**
+- git clone https://github.com/khued200/Lichess-BigData-Processing.git
 ### **2. Cài đặt các dependency**
 ```bash
 pip install -r requirements.txt
