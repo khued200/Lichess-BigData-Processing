@@ -17,7 +17,9 @@ Dự án này xây dựng một pipeline dữ liệu xử lý dữ liệu đầu
 
 ## **Hướng dẫn cài đặt**
 ### **1. Thực hiện clone repository**
-- git clone https://github.com/khued200/Lichess-BigData-Processing.git
+```bash
+git clone https://github.com/khued200/Lichess-BigData-Processing.git
+```
 ### **2. Cài đặt các dependency**
 ```bash
 pip install -r requirements.txt
