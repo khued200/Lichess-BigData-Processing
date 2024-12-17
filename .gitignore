@@ -1,3 +1,8 @@
 *.pgn
 *.zst
-data/*
+data/cassandra/*
+data/datanode/*
+data/kafka/*
+data/namenode/*
+data/spark-master/*
+data/spark-worker/*

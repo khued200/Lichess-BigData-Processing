@@ -9,7 +9,7 @@ networks:
 
 services:
   zookeeper:
-    image: confluentinc/cp-zookeeper:latest
+    image: confluentinc/cp-zookeeper:7.7.1
     hostname: zookeeper
     container_name: zookeeper-lichess
     ports:
@@ -18,39 +18,97 @@ services:
       - net
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
-
-  kafka:
-    image: confluentinc/cp-kafka:latest
+      
+  kafka-1:
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka1
+    container_name: kafka-1
     ports:
-      - 9092:9092
-      - 29092:29092
-    depends_on:
-      - zookeeper
+      - 9093:9093
+      - 29093:29093
     environment:
+      KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9093,PLAINTEXT_HOST://localhost:29093
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_NUM_PARTITIONS: 3
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.request.logger=WARN"
       KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+
+    depends_on:
+      - zookeeper
     volumes:
-      - ./data/kafka/:/var/run/docker.sock
-    hostname: kafka
-    container_name: kafka-lichess
+      - ./data/kafka-1:/var/lib/kafka/data
     networks:
       - net
-    restart: always
+
+  kafka_2:
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka2
+    container_name: kafka-2
+    ports:
+      - 9094:9094
+      - 29094:29094
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9094,PLAINTEXT_HOST://localhost:29094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.request.logger=WARN"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./data/kafka-2:/var/lib/kafka/data
+    networks:
+      - net
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.7.1
+    hostname: kafka3
+    container_name: kafka-3
+    ports:
+      - 9095:9095
+      - 29095:29095
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9095,PLAINTEXT_HOST://localhost:29095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.request.logger=WARN"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./data/kafka-3:/var/lib/kafka/data
+    networks:
+      - net
 
   cassandra:
-    image: cassandra:latest
+    image: cassandra:4.1.7
     container_name: cassandra-lichess
     hostname: cassandra
     networks:
       net:
         ipv4_address: 172.22.0.6
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
     ports:
-      - "9042:9042"
+      - 9042:9042
     environment:
       CASSANDRA_CLUSTER_NAME: "lichess-cluster"
       CASSANDRA_DC: "datacenter1"
@@ -63,15 +121,14 @@ services:
   spark-master:
     image: bde2020/spark-master:3.0.0-hadoop3.2-java11
     container_name: spark-master
+    # command: bin/spark-class org.apache.spark.deploy.master.Master
     hostname: spark-master
     healthcheck:
       interval: 5s
       retries: 100
     ports:
-      - "8080:8080"
+      - "9090:8080"
       - "7077:7077"
-      - "4040:4040"
-      - "4041:4041"
     environment:
       - INIT_DAEMON_STEP=false
       - SPARK_DRIVER_HOST=192.168.1.5
@@ -84,6 +141,7 @@ services:
     image: bde2020/spark-worker:3.0.0-hadoop3.2-java11
     container_name: spark-worker-1
     hostname: spark-worker-1
+    # command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
     depends_on:
       - spark-master
     ports:
@@ -95,39 +153,93 @@ services:
     networks:
       - net
 
-  namenode:
-    image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8
-    container_name: namenode
-    hostname: namenode
-    volumes:
-      - ./data/namenode:/hadoop/dfs/name
-    environment:
-      - CLUSTER_NAME=test
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
-    healthcheck:
-      interval: 5s
-      retries: 100
-    networks:
-      - net
-    ports:
-      - 9870:9870
-      - 8020:8020
+  # namenode:
+  #   image: bde2020/hadoop-namenode:2.0.0-hadoop3.1.3-java8
+  #   container_name: namenode
+  #   hostname: namenode
+  #   volumes:
+  #     - ./data/namenode:/hadoop/dfs/name
+  #   environment:
+  #     - CLUSTER_NAME=test
+  #     - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  #   healthcheck:
+  #     interval: 5s
+  #     retries: 100
+  #   networks:
+  #     - net
+  #   ports:
+  #     - 9870:9870
+  #     - 8020:8020
 
-  datanode:
-    image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.3-java8
-    container_name: datanode
-    hostname: datanode
-    volumes:
-      - ./data/datanode:/hadoop/dfs/data
-    environment:
-      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  # datanode:
+  #   image: bde2020/hadoop-datanode:2.0.0-hadoop3.1.3-java8
+  #   container_name: datanode
+  #   hostname: datanode
+  #   volumes:
+  #     - ./data/datanode:/hadoop/dfs/data
+  #   environment:
+  #     - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+  #   depends_on:
+  #     - namenode
+  #   healthcheck:
+  #     interval: 5s
+  #     retries: 100
+  #   networks:
+  #     - net
+  #   ports:
+  #     - 50075:50075
+  #     - 50010:50010
+
+  webserver:
+    image: apache/airflow:2.10.3-python3.11
+    command: webserver
+    entrypoint: ['/opt/airflow/script/entrypoint.sh']
     depends_on:
-      - namenode
+      - postgres
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+    ports:
+      - "8080:8080"
     healthcheck:
-      interval: 5s
-      retries: 100
+      test: ['CMD-SHELL', "[ -f /opt/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    container_name: webserver
     networks:
       - net
-    ports:
-      - 50075:50075
-      - 50010:50010
+
+  scheduler:
+    image: apache/airflow:2.10.3-python3.11
+    volumes:
+      - ./data/airflow/dags:/opt/airflow/dags
+      - ./data/airflow/script/entrypoint.sh:/opt/airflow/script/entrypoint.sh
+      - ./requirements.txt:/opt/airflow/requirements.txt
+      - ./data/airflow/airflow.cfg:/opt/airflow/airflow.cfg
+      - ./lichess_db_chess960_rated_2024-09.pgn:/opt/airflow/lichess_db_chess960_rated_2024-09.pgn
+    command: bash -c "pip install -r ./requirements.txt && airflow db upgrade && airflow scheduler"
+    container_name: scheduler
+    networks:
+      - net
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - POSTGRES_DB=airflow
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    container_name: postgres
+    networks:
+      - net

@@ -55,14 +55,14 @@ def parse_partial_pgn_to_dataframe(pgn_file, num_games=10):
     return pd.DataFrame(games_data)
 
 # Đọc một phần của file PGN (chỉ đọc 5 ván cờ đầu tiên)
-pgn_file = 'D:\\lichess_db_antichess_rated_2024-09.pgn'
+pgn_file = 'lichess_db_chess960_rated_2024-09.pgn'
 df = parse_partial_pgn_to_dataframe(pgn_file, num_games=1000)
 
 # Hiển thị DataFrame chứa thông tin về các ván cờ đầu tiên
 # display(df)
 # Tạo Kafka Producer
 producer = KafkaProducer(
-    bootstrap_servers='localhost:29092',  # Địa chỉ của Kafka broker
+    bootstrap_servers='localhost:9092',  # Địa chỉ của Kafka broker
     value_serializer=lambda v: json.dumps(v).encode('utf-8'),
     linger_ms=100000*10000, batch_size=16384*100  # Chuyển đổi dữ liệu thành chuỗi JSON
 )

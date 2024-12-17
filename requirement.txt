@@ -1,4 +1,0 @@
-chess
-pandas
-kafka-python
-cassandra-driver
